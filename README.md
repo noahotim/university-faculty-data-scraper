@@ -1,6 +1,8 @@
 # University Faculty Data Collector
 
-A Python web scraping project that collects faculty information from selected Nigerian university websites.
+A Python web scraping project that collects faculty information from selected **Nigerian & Ugandan** university websites.
+
+> Live: **https://github.com/noahotim/university-faculty-data-scraper** ✅
 
 The scraper reads predefined university and department URLs, collects available lecturer information, cleans and validates the records, downloads lecturer images, and saves the results in CSV and Excel formats. It also keeps track of invalid records and sends an email summary when the scraping process is completed.
 
@@ -81,8 +83,12 @@ The collected faculty data includes fields such as:
 
 | University | URL | Status | Records |
 |---|---|---|---|
-| Ahmadu Bello University | https://engineering.abu.edu.ng/academic.php | ✅ Working | 10 |
-| University of Ilorin | https://se.education.unilorin.edu.ng/staff/academic/ | ✅ Working | 24 |
+| Ahmadu Bello University (Nigeria) | https://engineering.abu.edu.ng/academic.php | ✅ Working | 10 |
+| University of Ilorin (Nigeria) | https://se.education.unilorin.edu.ng/staff/academic/ | ✅ Working | 24 |
+| Makerere University - CoCIS (Uganda) | https://cocis.mak.ac.ug/faculty/ | ✅ Working | ~83 |
+| Makerere University - CEDAT (Uganda) | https://cedat.mak.ac.ug/academic-staff/ | ✅ Working | 63 |
+| Gulu University (Uganda) | https://gu.ac.ug/staff_category/academic/ | ✅ Working | 5 |
+| Kyambogo / MUST / Any (Uganda) | via generic `scrape_generic()` | ⚙️ Auto | — |
 
 This scraper is written for specific university websites and their page structures. The university names and department URLs provided with the project are already configured for the scraping logic.
 
