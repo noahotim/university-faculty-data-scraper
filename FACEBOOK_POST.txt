@@ -2,7 +2,7 @@ Boom! It's live 🚀
 My University Faculty Data Scraper is now on GitHub. Check it out and let me know what you think — feedback and contributions are welcome.
 Read the README.md to understand how it works. Thank you!
 
-Repo: github.com/YOUR_USERNAME/university-faculty-data-scraper
+Repo: github.com/noahotim/university-faculty-data-scraper
 
 Features:
 ✅ Scrapes faculty data from Nigerian universities (ABU, Unilorin + generic support)
