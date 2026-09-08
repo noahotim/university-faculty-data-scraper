@@ -79,9 +79,14 @@ The collected faculty data includes fields such as:
 
 ## Supported Universities
 
+| University | URL | Status | Records |
+|---|---|---|---|
+| Ahmadu Bello University | https://engineering.abu.edu.ng/academic.php | ✅ Working | 10 |
+| University of Ilorin | https://se.education.unilorin.edu.ng/staff/academic/ | ✅ Working | 24 |
+
 This scraper is written for specific university websites and their page structures. The university names and department URLs provided with the project are already configured for the scraping logic.
 
-Changing the existing input to an arbitrary university or department URL does not automatically make the scraper work with that website. A different university website may have a different HTML structure and will require its own scraping logic.
+**To add a new university:** See `ADD_NEW_UNIVERSITY.md` and `scraper_template.py`. A generic fallback `scrape_generic()` (`scraper.py:128`) will auto-try common selectors for quick testing — just add the new URL to `input/Universities.csv`.
 
 ## Limitations
 

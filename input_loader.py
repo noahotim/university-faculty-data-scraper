@@ -13,4 +13,5 @@ def load_universities():
 
     return universities
 
-load_universities()
+if __name__ == "__main__":
+    print(load_universities())

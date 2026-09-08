@@ -46,12 +46,13 @@ def main():
 
                 valid_records.append(record)
                 image_url = record.get("Image_url")
-                if image_url:
+                if image_url and image_url != "Image not Found":
                     try:
-                        image_name = f"{record["University"]}_{record["Name"]}.jpg"
+                        image_name = f"{record['University']}_{record['Name']}.jpg"
                         image_name = clean_filename(image_name)
                         image_path = download_image(image_url, image_name)
-                        record["Image_file"] = str(image_path)
+                        if image_path:
+                            record["Image_file"] = str(image_path)
                     except requests.RequestException as error:
                         logger.error("Failed to download image for %s: %s",
                                       record.get("Name"),
@@ -121,7 +122,7 @@ def main():
     sent_email = send_summary_email(
         successful = Successful,
         failed = len(Failed),
-        valid_records = len(valid_records),
+        valid_records = len(all_records),
         invalid_records = len(invalid_records)
     )
 
