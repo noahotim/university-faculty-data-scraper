@@ -9,6 +9,7 @@ from scraper import scrape_university
 from output_writer import save_records,save_invalid_records
 from cleaner import clean_record,is_valid_record
 from excel_tools import save_to_excel
+from pdf_tools import save_to_pdf
 
 logger = logging.getLogger(__name__)
 def main():
@@ -86,11 +87,12 @@ def main():
     if all_records:
         csv_saved = save_records(all_records)
         excel_saved = save_to_excel(all_records)
-
+        pdf_saved = save_to_pdf(all_records)
     else:
         logger.warning("No Records were Collected From any University")
         csv_saved = False
         excel_saved = False
+        pdf_saved = False
 
     if csv_saved:
         logger.info("CSV file saved successfully")
@@ -101,6 +103,11 @@ def main():
         logger.info("Excel file saved successfully")
     else:
         logger.error("Excel file could no be saved")
+
+    if pdf_saved:
+        logger.info("PDF file saved successfully")
+    else:
+        logger.error("PDF file could not be saved")
 
     logger.info("%s out of %s scraped Successfully",
                 Successful,

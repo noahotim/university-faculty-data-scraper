@@ -2,5 +2,9 @@
 output/images/
 output/logs/
 .venv/
+# keep demo outputs for live preview
+!output/universities.csv
+!output/universities.xlsx
+!output/universities.pdf
 __pycache__/
 .idea/

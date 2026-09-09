@@ -53,6 +53,10 @@ footer{text-align:center;padding:14px;color:#666;font-size:12px}
  <select id="uni" onchange="filter()"><option value="">All Universities</option>{% for u in universities %}<option>{{u}}</option>{% endfor %}</select>
  <select id="fac" onchange="filter()"><option value="">All Faculties</option>{% for f in faculties %}<option>{{f}}</option>{% endfor %}</select>
  <button id="runBtn" onclick="runDemo()" style="background:#0a66c2;color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer">▶ Run Live Scrape (2 min)</button> <span id="runStatus" class="badge"></span>
+ <a href="/output/universities.pdf" target="_blank" style="background:#d93025;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none">📄 PDF Preview</a>
+ <a href="/output/universities.pdf" download style="background:#188038;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none">⬇ PDF Download</a>
+ <a href="/output/universities.csv" download style="background:#555;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none">⬇ CSV</a>
+ <a href="/output/universities.xlsx" download style="background:#555;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none">⬇ Excel</a>
 </div>
 
 <table id="tbl">
@@ -72,7 +76,12 @@ footer{text-align:center;padding:14px;color:#666;font-size:12px}
 </table>
 
 <div id="pager" style="text-align:center;margin:16px"><button onclick="prev()" id="prevBtn">‹ Prev</button> <span id="pageInfo" class="badge"></span> <button onclick="next()" id="nextBtn">Next ›</button></div>
-<footer>Demo reads <code>output/universities.csv</code> (169 records from 7/43 universities) | All 43 Ugandan in <code>input/Universities_Uganda_All.csv</code> — 36 failed due to no public directory / 404 (see <code>output/logs/app.log</code>) | <a href="/api/data">JSON API</a> | Free Render sleeps — first load 30s</footer>
+<div style="margin:16px;background:#fff;padding:14px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+ <h3 style="margin:0 0 8px">📄 PDF Preview</h3>
+ <iframe src="/output/universities.pdf" style="width:100%;height:600px;border:1px solid #ddd;border-radius:6px" loading="lazy"></iframe>
+ <p style="font-size:12px;color:#666">If preview doesn't load (Render free cold start), use <a href="/output/universities.pdf" target="_blank">direct PDF</a> or <a href="/api/pdf">generate fresh PDF</a></p>
+</div>
+<footer>Demo reads <code>output/universities.csv</code> (415 records from 11/44 universities) | All 44 Ugandan in <code>input/Universities.csv</code> — 33 failed 404 (see <code>output/logs/app.log</code>) | <a href="/api/data">JSON</a> | <a href="/api/pdf">PDF API</a> | Free Render sleeps — first load 30s</footer>
 
 <script>
 let cur=1, per=20;
@@ -175,9 +184,23 @@ def run_demo():
 def run_demo_status():
     return jsonify(_demo_status)
 
+@app.route("/output/<path:filename>")
+def serve_output(filename):
+    # Serve csv/xlsx/pdf from output
+    return send_from_directory(Path("output"), filename)
+
 @app.route("/output/images/<path:filename>")
 def serve_image(filename):
     return send_from_directory(Path("output/images"), filename)
+
+@app.route("/api/pdf")
+def api_pdf():
+    from pdf_tools import save_to_pdf
+    records = load_records()
+    if not records:
+        return jsonify({"error": "No records"}), 404
+    save_to_pdf(records)
+    return jsonify({"status": "PDF generated", "records": len(records), "file": "output/universities.pdf", "url": "/output/universities.pdf"})
 
 if __name__ == "__main__":
     import os
