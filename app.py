@@ -52,7 +52,7 @@ footer{text-align:center;padding:14px;color:#666;font-size:12px}
  <input id="q" placeholder="Search name/position/university..." onkeyup="filter()">
  <select id="uni" onchange="filter()"><option value="">All Universities</option>{% for u in universities %}<option>{{u}}</option>{% endfor %}</select>
  <select id="fac" onchange="filter()"><option value="">All Faculties</option>{% for f in faculties %}<option>{{f}}</option>{% endfor %}</select>
- <button onclick="window.location.href='/api/run-demo'" style="background:#0a66c2;color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer">▶ Run Live Scrape (demo)</button>
+ <button id="runBtn" onclick="runDemo()" style="background:#0a66c2;color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer">▶ Run Live Scrape (2 min)</button> <span id="runStatus" class="badge"></span>
 </div>
 
 <table id="tbl">
@@ -103,6 +103,19 @@ function paginate(){
 function filter(){ cur=1; paginate(); }
 function next(){ cur++; paginate(); }
 function prev(){ cur--; paginate(); }
+async function runDemo(){
+  document.getElementById('runStatus').innerText='Starting...';
+  const r=await fetch('/api/run-demo'); const j=await r.json();
+  document.getElementById('runStatus').innerText=j.status;
+  let tries=0;
+  const iv=setInterval(async()=>{
+    tries++;
+    const s=await fetch('/api/run-demo/status').then(x=>x.json());
+    document.getElementById('runStatus').innerText=s.running?'Scraping... '+s.started : s.last.slice(0,60);
+    if(!s.running && tries>2){ clearInterval(iv); if(confirm('Scrape finished — reload page?')) location.reload(); }
+    if(tries>40) clearInterval(iv);
+  },3000);
+}
 window.onload=paginate;
 </script>
 </body>
@@ -133,12 +146,34 @@ def index():
 def api_data():
     return jsonify(load_records())
 
+_demo_status = {"running": False, "last": "Demo data loaded (169 records)", "started": None}
+
 @app.route("/api/run-demo")
 def run_demo():
-    # Trigger a lightweight scrape for demo (CEDAT + Gulu only to be fast)
-    import subprocess, sys
-    # run main.py in background? For demo just return status
-    return jsonify({"status": "Demo data already loaded", "hint": "Run: python main.py to refresh output/universities.csv"})
+    import threading, time, subprocess, sys
+    from pathlib import Path
+    global _demo_status
+    if _demo_status["running"]:
+        return jsonify({"status": "Already running", "started": _demo_status["started"]})
+    def _run():
+        global _demo_status
+        _demo_status["running"] = True
+        _demo_status["started"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            # Run main.py with FAST_COCIS to avoid 80s fetch
+            env = {**__import__("os").environ, "FAST_COCIS": "1"}
+            proc = subprocess.run([sys.executable, "main.py"], capture_output=True, text=True, timeout=300, env=env)
+            _demo_status["last"] = f"Completed: {proc.stdout[-500:]} | {proc.stderr[-500:]}"
+        except Exception as e:
+            _demo_status["last"] = f"Error: {e}"
+        finally:
+            _demo_status["running"] = False
+    threading.Thread(target=_run, daemon=True).start()
+    return jsonify({"status": "Scrape started in background", "hint": "Refresh in 60-90s. Check /api/run-demo/status", "started": _demo_status["started"]})
+
+@app.route("/api/run-demo/status")
+def run_demo_status():
+    return jsonify(_demo_status)
 
 @app.route("/output/images/<path:filename>")
 def serve_image(filename):

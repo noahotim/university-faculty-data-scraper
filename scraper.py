@@ -125,9 +125,11 @@ def scrape_Unilorin(url):
     return records
 
 
-def scrape_makerere_cocis(url):
+def scrape_makerere_cocis(url, fast=False):
     """Makerere University - College of Computing & Information Sciences (CoCIS)
        URL: https://cocis.mak.ac.ug/faculty/ -> 83 faculty grid posts"""
+    import os
+    fast = fast or os.getenv("FAST_COCIS", "0") == "1"
     soup = fetch_page(url)
     records = []
     university_name = "Makerere University"
@@ -135,7 +137,7 @@ def scrape_makerere_cocis(url):
     cards = soup.select("article.eael-grid-post")
     if not cards:
         cards = soup.select(".eael-post-grid-column")
-    logger.info(f"Makerere CoCIS: found {len(cards)} faculty cards on listing page")
+    logger.info(f"Makerere CoCIS: found {len(cards)} faculty cards on listing page (fast={fast})")
     for card in cards:
         h2 = card.find("h2", class_="eael-entry-title")
         a = h2.find("a") if h2 else None
@@ -155,8 +157,8 @@ def scrape_makerere_cocis(url):
                     position = txt[:80].strip()
         profile_url = a["href"] if a and a.get("href") else None
         image_url = "Image not Found"
-        # Fetch profile page for image/detail (best effort, 15s timeout)
-        if profile_url:
+        # Fetch profile page for image/detail (best effort, 15s timeout) — skip in fast mode
+        if profile_url and not fast:
             try:
                 p_soup = fetch_page(profile_url)
                 # Try og:image or first content image
@@ -234,6 +236,51 @@ def scrape_makerere_cedat(url):
             "Position": position,
             "Image_url": image_url
         })
+    return records
+
+
+def scrape_soroti(url):
+    """Soroti University - Staff Directory
+       URL: https://sun.ac.ug/staff-directory/"""
+    soup = fetch_page(url)
+    records = []
+    university_name = "Soroti University"
+    # Try h3/h4 for names
+    candidates = soup.find_all(["h3","h4"])
+    logger.info(f"Soroti University: found {len(candidates)} h3/h4 tags")
+    for h in candidates:
+        name = h.get_text(strip=True)
+        if not name or len(name) < 4:
+            continue
+        if any(x in name.lower() for x in ["staff directory","administrative","university management","top management","share this"]):
+            continue
+        # filter titles that are clearly not names (too long sentence)
+        if len(name.split()) > 6:
+            continue
+        # Position: next sibling p or next h tag
+        pos = "Academic Staff"
+        nxt = h.find_next_sibling()
+        if nxt and nxt.name in ("p","span","div"):
+            txt = nxt.get_text(strip=True)
+            if txt and len(txt) < 80:
+                pos = txt
+        image_url = "Image not Found"
+        parent = h.parent
+        img = parent.find("img") if parent else None
+        if img and img.get("src"):
+            image_url = img["src"]
+        records.append({
+            "University": university_name,
+            "Faculty": "Soroti University",
+            "Department": "Staff Directory",
+            "Name": name,
+            "Position": pos,
+            "Image_url": image_url
+        })
+    # Fallback generic if too few
+    if len(records) < 3:
+        logger.info("Soroti fallback to generic")
+        return scrape_generic(url, university_name="Soroti University")
     return records
 
 
@@ -336,6 +383,8 @@ def scrape_university(university, url):
         return scrape_makerere_cedat(url)
     elif university in ("gulu university", "gu"):
         return scrape_gulu(url)
+    elif university in ("soroti university", "sun"):
+        return scrape_soroti(url)
     elif "kyambogo" in university or "kyu" in university:
         return scrape_generic(url, university_name="Kyambogo University")
     elif "mbarara" in university or "must" in university:
