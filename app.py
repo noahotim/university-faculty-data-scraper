@@ -45,7 +45,7 @@ footer{text-align:center;padding:14px;color:#666;font-size:12px}
  <div><b>{{ universities|length }}</b><br>Universities</div>
  <div><b>{{ images }}</b><br>Images</div>
  <div><b>{{ failed }}</b><br>Failed (demo)</div>
- <div><span class="badge">{{ source }}</span></div>
+ <div><span class="badge">{{ data_source }}</span></div>
 </div>
 
 <div class="controls">
@@ -109,7 +109,7 @@ def index():
     faculties = sorted({r["Faculty"] for r in records if r["Faculty"]})
     total = len(records)
     images = len(list(Path("output/images").glob("*.jpg"))) if Path("output/images").exists() else 0
-    return render_template_string(TEMPLATE, records=records[:500], total=total, universities=universities, faculties=faculties, images=images, failed=1 if total<80 else 0, source="output/universities.csv (Demo: 78 records)")
+    return render_template_string(TEMPLATE, records=records[:500], total=total, universities=universities, faculties=faculties, images=images, failed=1 if total<80 else 0, data_source="output/universities.csv (Demo: 78 records)")
 
 @app.route("/api/data")
 def api_data():
