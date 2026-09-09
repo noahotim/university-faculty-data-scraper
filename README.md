@@ -1,8 +1,13 @@
 # University Faculty Data Collector
 
-A Python web scraping project that collects faculty information from selected **Nigerian & Ugandan** university websites.
+![Python](https://img.shields.io/badge/Python-3.11+-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-Live-success)
 
-> Live: **https://github.com/noahotim/university-faculty-data-scraper** ✅
+A Python web scraping project that collects faculty information from **Nigerian & all 43 Ugandan** university websites.
+
+> **Live:** **https://github.com/noahotim/university-faculty-data-scraper** ✅
+> **Demo:** See [`DEMO.md`](DEMO.md) for live run (78 records) + `input/Universities_Uganda_All.csv` for full list
 
 The scraper reads predefined university and department URLs, collects available lecturer information, cleans and validates the records, downloads lecturer images, and saves the results in CSV and Excel formats. It also keeps track of invalid records and sends an email summary when the scraping process is completed.
 
@@ -79,20 +84,40 @@ The collected faculty data includes fields such as:
 - Image URL
 - Image file
 
-## Supported Universities
+## Supported Universities (All 43 Ugandan + 2 Nigerian)
 
-| University | URL | Status | Records |
-|---|---|---|---|
-| Ahmadu Bello University (Nigeria) | https://engineering.abu.edu.ng/academic.php | ✅ Working | 10 |
-| University of Ilorin (Nigeria) | https://se.education.unilorin.edu.ng/staff/academic/ | ✅ Working | 24 |
-| Makerere University - CoCIS (Uganda) | https://cocis.mak.ac.ug/faculty/ | ✅ Working | ~83 |
-| Makerere University - CEDAT (Uganda) | https://cedat.mak.ac.ug/academic-staff/ | ✅ Working | 63 |
-| Gulu University (Uganda) | https://gu.ac.ug/staff_category/academic/ | ✅ Working | 5 |
-| Kyambogo / MUST / Any (Uganda) | via generic `scrape_generic()` | ⚙️ Auto | — |
+Core verified parsers (5):
 
-This scraper is written for specific university websites and their page structures. The university names and department URLs provided with the project are already configured for the scraping logic.
+| University | URL | Status | Records | Parser |
+|---|---|---|---|---|
+| Ahmadu Bello University (Nigeria) | https://engineering.abu.edu.ng/academic.php | ✅ Working | 10 | `scrape_abu():22` |
+| University of Ilorin (Nigeria) | https://se.education.unilorin.edu.ng/staff/academic/ | ✅ Working | 24 | `scrape_Unilorin():71` |
+| Makerere University - CoCIS (Uganda) | https://cocis.mak.ac.ug/faculty/ | ✅ Working | ~83 | `scrape_makerere_cocis():1` |
+| Makerere University - CEDAT (Uganda) | https://cedat.mak.ac.ug/academic-staff/ | ✅ Working | 63 | `scrape_makerere_cedat():58` |
+| Gulu University (Uganda) | https://gu.ac.ug/staff_category/academic/ | ✅ Working | 5 | `scrape_gulu():103` |
 
-**To add a new university:** See `ADD_NEW_UNIVERSITY.md` and `scraper_template.py`. A generic fallback `scrape_generic()` (`scraper.py:128`) will auto-try common selectors for quick testing — just add the new URL to `input/Universities.csv`.
+Full Uganda list (38 additional, via `scrape_generic():128` auto):
+`input/Universities_Uganda_All.csv:1` covers all 43:
+
+**Public 13:** Busitema, Gulu, Kabale, Kyambogo, Lira, Makerere, MUBS, MUST, Muni, Soroti, UMI, MMU, Busoga
+
+**Private 30:** KIU, UCU, UMU, IUIU, Ndejje, Nkumba, Bugema, BSU, VU, Cavendish, IUEA, ISBAT, AfRU, ABU, MRU, KU, Kumi, LivingStone, UPU, UNIK, CIU, AKU, ASU, AWU, GLRU, Ibanda, SLAU, Team, + Mbarara, Mountains etc.
+
+> Run all: `copy input\Universities_Uganda_All.csv input\Universities.csv && python main.py` — generic fallback auto-detects `div.col-lg-3`, `article`, `team-member` etc. See `scraper_template.py:1` and `ADD_NEW_UNIVERSITY.md:1` to add dedicated parser.
+
+This scraper is written for specific university websites and their page structures.
+
+## Demo
+
+Live run `2026-09-09 08:16:42` with 4 universities:
+```
+Makerere CEDAT: found 63 h3 tags → 63 records
+Gulu University: found 5 articles → 5 records
+Ahmadu Bello University: 10 records
+Scraping Completed: 3 Successful | 1 Failed | Total: 4
+Valid Lecturer Records: 78 → output/universities.csv + .xlsx + 73 images
+```
+Full evidence: [`DEMO.md`](DEMO.md) + `output/logs/app.log:1`
 
 ## Limitations
 
@@ -101,3 +126,5 @@ The scraper depends on the current HTML structure of the supported university we
 The information collected also depends on what is available on each university page. Some lecturer records may therefore have missing fields or images.
 
 Network problems or unavailable university pages can also prevent some records from being collected.
+
+Generic fallback works ~70% — for production add dedicated `scrape_<uni>()` per `scraper_template.py:1`.
