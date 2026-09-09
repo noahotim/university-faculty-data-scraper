@@ -241,18 +241,21 @@ def scrape_makerere_cedat(url):
 
 def scrape_soroti(url):
     """Soroti University - Staff Directory
-       URL: https://sun.ac.ug/staff-directory/"""
+       URL: https://sun.ac.ug/staff-directory/ or /school-of-engineering-technology/"""
     soup = fetch_page(url)
     records = []
+    is_engineering = "engineering" in url.lower()
     university_name = "Soroti University"
+    faculty = "School of Engineering & Technology" if is_engineering else "Soroti University"
+    dept = "School of Engineering" if is_engineering else "Staff Directory"
     # Try h3/h4 for names
     candidates = soup.find_all(["h3","h4"])
-    logger.info(f"Soroti University: found {len(candidates)} h3/h4 tags")
+    logger.info(f"Soroti University: found {len(candidates)} h3/h4 tags (eng={is_engineering})")
     for h in candidates:
         name = h.get_text(strip=True)
         if not name or len(name) < 4:
             continue
-        if any(x in name.lower() for x in ["staff directory","administrative","university management","top management","share this"]):
+        if any(x in name.lower() for x in ["staff directory","administrative","university management","top management","share this","school of engineering"]):
             continue
         # filter titles that are clearly not names (too long sentence)
         if len(name.split()) > 6:
@@ -271,8 +274,8 @@ def scrape_soroti(url):
             image_url = img["src"]
         records.append({
             "University": university_name,
-            "Faculty": "Soroti University",
-            "Department": "Staff Directory",
+            "Faculty": faculty,
+            "Department": dept,
             "Name": name,
             "Position": pos,
             "Image_url": image_url
@@ -281,6 +284,122 @@ def scrape_soroti(url):
     if len(records) < 3:
         logger.info("Soroti fallback to generic")
         return scrape_generic(url, university_name="Soroti University")
+    return records
+
+def scrape_lira(url):
+    """Lira University - Staff Directory
+       URL: https://lirauni.ac.ug/staff-directory/"""
+    soup = fetch_page(url)
+    records = []
+    university_name = "Lira University"
+    candidates = soup.find_all(["h3","h4"])
+    logger.info(f"Lira University: found {len(candidates)} h3/h4 tags")
+    for h in candidates:
+        name = h.get_text(strip=True)
+        if not name or len(name) < 5:
+            continue
+        if any(x in name.lower() for x in ["staff directory","faculty of","visiting staff","staff members"]):
+            continue
+        if len(name.split()) > 6:
+            continue
+        if name.lower().startswith("share this"):
+            continue
+        pos = "Academic Staff"
+        nxt = h.find_next_sibling()
+        if nxt and nxt.name in ("p","span","div"):
+            txt = nxt.get_text(strip=True)
+            if txt and len(txt) < 100:
+                pos = txt[:80]
+        image_url = "Image not Found"
+        parent = h.parent
+        img = parent.find("img") if parent else None
+        if img and img.get("src"):
+            image_url = img["src"]
+        records.append({
+            "University": university_name,
+            "Faculty": "Lira University",
+            "Department": "Staff Directory",
+            "Name": name,
+            "Position": pos,
+            "Image_url": image_url
+        })
+    if len(records) < 3:
+        return scrape_generic(url, university_name="Lira University")
+    return records
+
+def scrape_muni(url):
+    """Muni University - Library / Health Sciences
+       URL: https://lib.muni.ac.ug/library-staff/ or https://health.muni.ac.ug/"""
+    soup = fetch_page(url)
+    records = []
+    university_name = "Muni University"
+    # Table case (lib.muni.ac.ug)
+    tables = soup.find_all("table")
+    if tables:
+        for table in tables:
+            headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
+            has_name = any("name" in h for h in headers)
+            if not has_name and len(headers) == 0:
+                # guess headerless table with Name | Designation
+                pass
+            for row in table.find_all("tr")[1:]:
+                cols = row.find_all(["td","th"])
+                if len(cols) < 2:
+                    continue
+                name = cols[0].get_text(strip=True)
+                pos = cols[1].get_text(strip=True) if len(cols) > 1 else "Academic Staff"
+                if not name or name.lower() in ("name","designation"):
+                    continue
+                if len(name) < 4 or len(name.split()) > 6:
+                    continue
+                records.append({
+                    "University": university_name,
+                    "Faculty": "Muni University",
+                    "Department": "Library" if "lib.muni" in url else "Faculty",
+                    "Name": name,
+                    "Position": pos,
+                    "Image_url": "Image not Found"
+                })
+        if records:
+            logger.info(f"Muni University table: found {len(records)} records")
+            return records
+    # Fallback h tags for health.muni
+    candidates = soup.find_all(["h3","h4","h2"])
+    logger.info(f"Muni University: found {len(candidates)} h tags for {url}")
+    for h in candidates:
+        name = h.get_text(strip=True)
+        if not name or len(name) < 4:
+            continue
+        if any(x in name.lower() for x in ["our mission","bachelor","welcome to","faculty of","meet our","view all","comprehensive","advancing","clinical","program","research","excellence","training","library","learning","resources","expert","international","partnerships","our faculty staff"]):
+            continue
+        if len(name.split()) > 6:
+            continue
+        # Require staff title prefix for Muni to avoid generic headings
+        if not any(t in name for t in ["Dr.", "Prof.", "Mr.", "Ms.", "Assoc.", "Dean", "Head"]):
+            # also allow if contains at least 2 capitalized words and not generic
+            if not (name.istitle() and len(name.split()) >= 2 and len(name.split()) <= 4):
+                continue
+        pos = "Academic Staff"
+        nxt = h.find_next_sibling()
+        if nxt and nxt.name in ("p","span","div"):
+            txt = nxt.get_text(strip=True)
+            if txt and len(txt) < 120:
+                pos = txt[:80]
+        image_url = "Image not Found"
+        parent = h.parent
+        img = parent.find("img") if parent else None
+        if img and img.get("src"):
+            image_url = img["src"]
+        records.append({
+            "University": university_name,
+            "Faculty": "Muni University",
+            "Department": "Faculty of Health Sciences" if "health" in url else "Faculty",
+            "Name": name,
+            "Position": pos,
+            "Image_url": image_url
+        })
+    if len(records) < 3:
+        return scrape_generic(url, university_name="Muni University")
     return records
 
 
@@ -385,6 +504,12 @@ def scrape_university(university, url):
         return scrape_gulu(url)
     elif university in ("soroti university", "sun"):
         return scrape_soroti(url)
+    elif university in ("soroti university - school of engineering", "soroti engineering"):
+        return scrape_soroti(url)
+    elif university in ("lira university", "lira"):
+        return scrape_lira(url)
+    elif university in ("muni university", "muni"):
+        return scrape_muni(url)
     elif "kyambogo" in university or "kyu" in university:
         return scrape_generic(url, university_name="Kyambogo University")
     elif "mbarara" in university or "must" in university:
