@@ -1,5 +1,6 @@
 .env
-output/
+output/images/
+output/logs/
 .venv/
 __pycache__/
 .idea/
