@@ -60,7 +60,7 @@ footer{text-align:center;padding:14px;color:#666;font-size:12px}
 <tbody>
 {% for r in records %}
 <tr data-uni="{{r.University}}" data-fac="{{r.Faculty}}">
- <td>{% if r.Image_file and r.Image_file != '' %}<img src="/{{r.Image_file.replace('\\\\','/')}}" onerror="this.src='https://via.placeholder.com/48?text=N/A'">{% else %}<span class="badge">No Image</span>{% endif %}</td>
+ <td>{% if r.Image_file and r.Image_file != '' %}<img src="/{{r.Image_file}}" onerror="this.src='https://via.placeholder.com/48?text=N/A'">{% else %}<span class="badge">No Image</span>{% endif %}</td>
  <td>{{r.University}}</td>
  <td>{{r.Faculty}}</td>
  <td>{{r.Department}}</td>
@@ -96,7 +96,11 @@ def load_records():
     if not p.exists():
         return []
     with p.open(encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+        rows = list(csv.DictReader(f))
+        for r in rows:
+            if r.get("Image_file"):
+                r["Image_file"] = r["Image_file"].replace("\\", "/")
+        return rows
 
 @app.route("/")
 def index():
